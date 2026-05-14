@@ -1,0 +1,14 @@
+# config/local.yaml — Local development overrides
+#
+# Merged on top of base.yaml when R_CONFIG_ACTIVE=local (the default).
+# Local development uses the filesystem for storage.
+
+storage:
+  backend: "local"
+  # Local targets cache stays in _targets/ directory
+  targets_store: "_targets"
+
+gcs:
+  # GCS bucket names (used by helpers, not actively connected in local mode)
+  targets_bucket: "r-analytics-platform-targets"
+  data_bucket: "r-analytics-platform-data"

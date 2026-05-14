@@ -1,0 +1,33 @@
+name: Tofu Apply
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['infra/tofu/**']
+
+permissions:
+  contents: read
+
+jobs:
+  tofu-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # For the MVP, we authenticate using a JSON key stored as a GitHub Secret.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+
+      - name: Tofu Init
+        run: tofu init
+        working-directory: infra/tofu/
+
+      - name: Tofu Apply
+        run: tofu apply -auto-approve
+        working-directory: infra/tofu/

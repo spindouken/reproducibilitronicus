@@ -1,0 +1,39 @@
+Package: ranalyticsplatform
+Title: R Analytics Platform — Learning Project
+Version: 0.1.0
+Authors@R:
+    person("Author", "", , "author@example.com", role = c("aut", "cre"))
+Description: A personal learning project exploring modern R-based data
+    engineering patterns. Combines targets pipelines, parquet/Arrow/DuckDB
+    data processing, renv reproducibility, and automated Quarto website
+    publishing via GitHub Actions. Not a production system — this is an
+    educational field notebook.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    arrow,
+    cli,
+    dplyr (>= 1.1.0),
+    duckdb,
+    fs,
+    ggplot2,
+    gt,
+    here,
+    readr,
+    rlang,
+    scales,
+    targets,
+    tarchetypes,
+    yaml
+Suggests:
+    lintr,
+    pointblank,
+    testthat (>= 3.0.0),
+    withr,
+    processx
+Remotes:
+    openjusticeok/ojothemes,
+    openjusticeok/ojoutils
+Config/testthat/edition: 3

@@ -1,0 +1,45 @@
+# _quarto.yml — Main Quarto project configuration
+#
+# This project uses the okpolicy-website-template Quarto extension, which
+# provides a custom HTML format with branded SCSS styling and a custom
+# title-block partial. The extension lives in _extensions/ and was installed
+# as if running `quarto use template`.
+#
+# Profiles:
+#   default  — renders all pages including draft content
+#   drafts   — renders with a visible DRAFT watermark and banner
+#   public   — hides draft-only content for production deployment
+#
+# Usage:
+#   quarto render                       # default (all content)
+#   quarto render --profile drafts      # draft watermark visible
+#   quarto render --profile public      # production (draft content hidden)
+#   quarto preview                      # local dev server
+
+project:
+  type: website
+  render:
+    - "*.qmd"
+    - "!wip/"
+  output-dir: _site
+
+website:
+  title: "R Analytics Platform"
+  search: false
+  navbar:
+    background: "#2f507f"
+    foreground: "#ffffff"
+    left:
+      - href: index.qmd
+        text: About
+      - text: Reports
+        menu:
+          - href: reports/eviction-trends/index.qmd
+            text: "Eviction Trends"
+          - href: reports/geographic-patterns/index.qmd
+            text: "Geographic Patterns"
+
+format:
+  okpolicy-website-template-html: default
+  html:
+    toc: true

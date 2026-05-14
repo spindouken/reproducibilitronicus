@@ -1,0 +1,27 @@
+name: Tofu CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['infra/tofu/**']
+
+jobs:
+  tofu-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+
+      - name: Tofu Format Check
+        run: tofu fmt -check
+        working-directory: infra/tofu/
+
+      - name: Tofu Init (Backend False)
+        run: tofu init -backend=false
+        working-directory: infra/tofu/
+
+      - name: Tofu Validate
+        run: tofu validate
+        working-directory: infra/tofu/

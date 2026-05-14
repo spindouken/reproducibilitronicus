@@ -1,0 +1,32 @@
+# config/base.yaml — Centralized project configuration
+#
+# This file holds paths, project metadata, and settings shared across
+# all environments (local and CI). Environment-specific overrides live
+# in local.yaml and ci.yaml.
+#
+# Read in R with: yaml::read_yaml(here::here("config", "base.yaml"))
+
+project:
+  name: "r-analytics-platform"
+  display_name: "R Analytics Platform"
+  description: "Learning project for modern R data engineering patterns"
+
+paths:
+  data_raw: "data/raw"
+  data_parquet: "data/parquet"
+  data_derived: "data/derived"
+  reports: "reports"
+  docs: "docs"
+  graphs: "docs/graphs"
+
+pipeline:
+  # Source data: eviction records from the targets project
+  source_file: "evictions_granted_tulsa_2021_to_2025.csv"
+  target_district: "tulsa"
+  date_range:
+    start: "2021-01-01"
+    end: "2025-12-31"
+
+quarto:
+  default_profile: "drafts"
+  production_profile: "public"

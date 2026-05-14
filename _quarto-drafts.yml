@@ -1,0 +1,23 @@
+# _quarto-drafts.yml
+#   Adds a DRAFT watermark and fixed banner to every page.
+#   Activate with: quarto render --profile drafts
+#
+#   Draft content is shown via:
+#     ::: {.content-hidden when-profile="public"}
+#     (draft-only content here)
+#     :::
+#
+#   This profile renders everything — draft and public content alike —
+#   but visually marks the output as non-final.
+
+project:
+  output-dir: _site/drafts
+  render:
+    - "*.qmd"
+
+format:
+  okpolicy-website-template-html:
+    css:
+      - draft.css
+    include-before-body:
+      - draft-banner.html

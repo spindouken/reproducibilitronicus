@@ -1,0 +1,71 @@
+---
+title: |
+  R Analytics Platform
+  Learning Project
+format:
+  okpolicy-website-template-html: default
+number-sections: true
+smooth-scroll: true
+knitr:
+  opts_chunk:
+    fig.align: center
+    echo: false
+    message: false
+    warning: false
+title-block-banner: "#2f507f"
+title-block-banner-color: "white"
+fontcolor: "black"
+linkcolor: "black"
+description: |
+  A personal learning project exploring modern R-based data engineering:
+  targets pipelines, parquet/Arrow/DuckDB, reproducible environments,
+  and automated deployment to GitHub Pages.
+---
+
+## About This Project
+
+This is an educational R project that combines lessons from several internal
+projects into a single, integrated learning environment. It demonstrates:
+
+- **Pipeline orchestration** with `targets` — caching, reproducibility, dependency graphs
+- **Modern data formats** — Parquet files queried with Arrow and DuckDB
+- **Reproducible environments** — `renv` for R packages, Docker for system dependencies
+- **Automated publishing** — Quarto website deployed via GitHub Actions to GitHub Pages
+- **Cloud storage** — GCS-backed artifact persistence with Workload Identity Federation
+
+## Reports
+
+### [Eviction Trends](reports/eviction-trends/index.qmd)
+
+* Year-over-year analysis of eviction filings in Tulsa County (2021–2025),
+  exploring how volume has changed over time and what the trajectory suggests.
+
+### [Geographic Patterns](reports/geographic-patterns/index.qmd)
+
+* Spatial analysis of where eviction filings concentrate geographically,
+  using geocoded court records to identify hotspot areas.
+
+::: {.content-hidden when-profile="public"}
+## Draft Notes
+
+This section is only visible in draft renders. It won't appear when
+the site is built with `QUARTO_PROFILE=public`.
+
+### Architecture Notes
+
+The project is structured as an R package with a `targets` pipeline that
+produces parquet outputs consumed by Quarto report pages. The pipeline and
+website share the same project root but are rendered independently:
+
+- `targets::tar_make()` runs the data pipeline
+- `quarto render` builds the website from pipeline outputs
+
+### Work in Progress
+
+Items under active development should be tracked here during the build.
+:::
+
+---
+
+*Built as a learning project. See [docs/JOURNEY.md](docs/JOURNEY.md) for
+the full build log.*

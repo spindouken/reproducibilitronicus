@@ -1,0 +1,13 @@
+# _quarto-public.yml
+#   Intended for production deployment via GitHub Actions.
+#   Activate with: QUARTO_PROFILE=public quarto render
+#
+#   This triggers ::: {.content-hidden when-profile="public"} blocks
+#   to remove draft/experimental content from live pages.
+#
+#   In CI, the workflow sets QUARTO_PROFILE=public as an environment
+#   variable rather than passing --profile directly.
+
+project:
+  render:
+    - "*.qmd"

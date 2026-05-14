@@ -1,0 +1,89 @@
+# Pipeline + Deploy workflow
+#
+# This workflow:
+# 1. Authenticates to GCP via Workload Identity Federation (WIF)
+# 2. Restores the renv package cache
+# 3. Runs the targets pipeline
+# 4. Persists pipeline artifacts to GCS
+# 5. Renders the public Quarto site
+# 6. Deploys to GitHub Pages
+#
+# WIF is already set up (don't touch it). This workflow only USES the
+# existing WIF provider — it doesn't create or modify it.
+#
+# Reference: BIG project's static.yml + actions repo's tofu-gcp-plan-apply.yml
+
+name: Pipeline + Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: "deploy"
+  cancel-in-progress: false
+
+env:
+  R_CONFIG_ACTIVE: ci
+
+jobs:
+  pipeline-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- GCP Authentication via Service Account Key ---
+      # For the MVP, we authenticate using a JSON key stored as a GitHub Secret.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # --- R + renv ---
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Setup renv
+        uses: r-lib/actions/setup-renv@v2
+
+      # --- System dependencies for Arrow/DuckDB ---
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      # --- Quarto ---
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # --- Run the targets pipeline ---
+      - name: Run pipeline
+        run: |
+          Rscript -e "targets::tar_make()"
+
+      # --- Persist artifacts to GCS ---
+      - name: Upload parquet to GCS
+        run: |
+          gsutil -m cp -r data/parquet/ gs://${{ vars.GCS_DATA_BUCKET }}/parquet/
+
+      - name: Upload targets metadata to GCS
+        run: |
+          gsutil -m cp -r _targets/meta/ gs://${{ vars.GCS_TARGETS_BUCKET }}/meta/
+
+      # --- Render and deploy ---
+      - name: Render and Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+        env:
+          QUARTO_PROFILE: public

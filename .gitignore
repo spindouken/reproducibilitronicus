@@ -1,0 +1,45 @@
+# Quarto
+/.quarto/
+/_site/
+*_files/
+/site_libs/
+/_freeze/
+
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# renv
+renv/library/
+renv/staging/
+renv/sandbox/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+
+# targets
+_targets/
+_targets_packages/
+
+# Data (tracked selectively — raw CSVs are committed, derived data is not)
+data/parquet/
+data/derived/
+
+# Docker
+docker/*.tar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local

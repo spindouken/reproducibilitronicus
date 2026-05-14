@@ -1,0 +1,135 @@
+---
+title: "Eviction Trends in Tulsa County"
+subtitle: "Year-over-year filing patterns, 2021–2025"
+format:
+  okpolicy-website-template-html: default
+title-block-banner: "#2f507f"
+title-block-banner-color: "white"
+fontcolor: "black"
+linkcolor: "black"
+number-sections: true
+smooth-scroll: true
+knitr:
+  opts_chunk:
+    fig.align: center
+    echo: false
+    message: false
+    warning: false
+description: |
+  How has the volume of granted evictions in Tulsa changed from 2021 to 2025?
+  This report examines year-over-year trends using geocoded court records
+  processed through the project's targets pipeline.
+---
+
+```{r setup}
+#| label: setup
+#| include: false
+
+# --- Pipeline output consumption (Phase 3) ---
+# This report now reads from parquet files produced by the targets pipeline.
+# The pipeline writes summarized data to data/parquet/ which this report
+# consumes. This is the core pattern: pipeline produces → report consumes.
+#
+# If the parquet file doesn't exist yet (pipeline hasn't been run),
+# fall back to reading the raw CSV directly.
+
+library(dplyr)
+library(ggplot2)
+library(gt)
+library(arrow)
+
+# Try parquet first (pipeline output), fall back to raw CSV
+parquet_path <- here::here("data", "parquet", "eviction_summary.parquet")
+raw_path <- here::here("data", "raw", "evictions_granted_tulsa_2021_to_2025.csv")
+
+if (file.exists(parquet_path)) {
+  annual_counts <- arrow::read_parquet(parquet_path)
+  data_source <- "parquet (pipeline output)"
+} else {
+  evictions_raw <- readr::read_csv(raw_path, show_col_types = FALSE)
+  annual_counts <- evictions_raw |>
+    count(filing_year, name = "n") |>
+    mutate(
+      change = n - lag(n),
+      pct_change = change / lag(n)
+    )
+  data_source <- "raw CSV (pipeline not yet run)"
+}
+```
+
+## What This Report Shows
+
+This report tracks the volume of **granted eviction filings** in Tulsa County
+from 2021 through 2025. "Granted" means a court issued a judgment in favor of
+eviction — not every filing results in one. The data comes from Oklahoma court
+records, geocoded and filtered to cases with high-confidence location data
+(accuracy ≥ 0.85).
+
+::: {.content-hidden when-profile="public"}
+### Data Source
+Currently reading from: **`r data_source`**.
+Run `targets::tar_make()` to generate pipeline outputs.
+:::
+
+## Annual Volume
+
+```{r annual-volume}
+#| label: fig-annual-volume
+#| fig-cap: "Granted evictions per year in Tulsa County"
+
+ggplot(annual_counts, aes(x = filing_year, y = n)) +
+  geom_col(fill = "#2f507f", width = 0.7) +
+  geom_text(
+    aes(label = scales::comma(n)),
+    vjust = -0.5, size = 4, fontface = "bold"
+  ) +
+  scale_x_continuous(breaks = annual_counts$filing_year) +
+  scale_y_continuous(
+    labels = scales::comma,
+    expand = expansion(mult = c(0, 0.15))
+  ) +
+  labs(
+    title = "Granted Evictions by Year",
+    subtitle = "Tulsa County, 2021–2025",
+    x = "Filing Year", y = "Number of Granted Evictions",
+    caption = "Source: Oklahoma court records via ojodb | Geocoded, accuracy ≥ 0.85"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold"),
+    plot.title.position = "plot"
+  )
+```
+
+## Summary Table
+
+```{r summary-table}
+#| label: tbl-annual-summary
+
+annual_counts |>
+  gt::gt() |>
+  gt::cols_label(
+    filing_year = "Year", n = "Evictions Granted",
+    change = "Change", pct_change = "% Change"
+  ) |>
+  gt::fmt_number(columns = c(n, change), decimals = 0) |>
+  gt::fmt_percent(columns = pct_change, decimals = 1) |>
+  gt::sub_missing(missing_text = "—") |>
+  gt::tab_header(
+    title = "Annual Eviction Summary",
+    subtitle = "Tulsa County, granted evictions with geocoded addresses"
+  ) |>
+  gt::tab_source_note("Source: Oklahoma court records | Geocoded accuracy ≥ 0.85")
+```
+
+## What the Data Suggests
+
+The trend line tells a story about housing stability in Tulsa County. Changes
+in eviction volume can reflect shifts in housing policy, economic conditions,
+pandemic-era protections expiring, or changes in landlord behavior.
+
+---
+
+*Data pipeline: `targets::tar_make()` → `data/parquet/` → this report.*

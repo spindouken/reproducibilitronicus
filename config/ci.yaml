@@ -1,0 +1,16 @@
+# config/ci.yaml — CI/GitHub Actions overrides
+#
+# Merged on top of base.yaml when R_CONFIG_ACTIVE=ci.
+# CI uses GCS for persistent storage and the public Quarto profile.
+
+storage:
+  backend: "gcs"
+  targets_store: "_targets"
+
+gcs:
+  targets_bucket: "r-analytics-platform-targets"
+  data_bucket: "r-analytics-platform-data"
+  # WIF auth is handled by the GitHub Actions workflow — no keys needed.
+
+quarto:
+  default_profile: "public"
