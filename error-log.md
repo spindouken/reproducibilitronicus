@@ -45,9 +45,23 @@ This document tracks the CLI errors encountered during the infrastructure setup,
 ### 9. Docker Build: Git Exit Code 128 (Private Repos)
 **Error:** `The process '/usr/bin/git' failed with exit code 128` during `renv::restore()`.
 **Why it happened:** The project depends on internal packages (`ojothemes`, `ojoutils`). When `renv::restore()` runs during a `docker build` in CI, it lacks the credentials to clone these private repositories.
-**How we fixed it:** Passed `GITHUB_TOKEN` as a build argument (`GITHUB_PAT`) to the Docker build and updated the `Dockerfile` to use it for authentication.
+**How we fixed it at the time:** Passed `GITHUB_TOKEN` as a build argument (`GITHUB_PAT`) to the Docker build and updated the `Dockerfile` to use it for authentication. This was later replaced with a BuildKit secret in Error 11 to avoid baking credentials into image metadata.
 
 ### 10. GitHub Actions: Node.js 20 Deprecation
 **Error:** `Node.js 20 actions are deprecated...` warnings.
 **Why it happened:** The workflow utilized older action versions that default to the now-deprecated Node.js 20 runtime.
 **How we fixed it:** Updated `docker/build-push-action` to `v6` and set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to opt into Node.js 24.
+
+### 11. Docker Build: Missing `.Rprofile`
+**Error:** `COPY .Rprofile .Rprofile` failed during `docker/build-push-action@v6` with `"/.Rprofile": not found`.
+**Why it happened:** The repository does not contain a root `.Rprofile`, but the Dockerfile still required one before running `renv::restore()`. BuildKit calculates checksums for each `COPY` source before the layer runs, so the build stopped before package restoration could proceed.
+**Important non-cause:** The log also showed `failed to configure registry cache importer: ghcr.io/spindouken/reproducibilitronicus:buildcache: not found`. That means the registry cache tag did not exist yet, which can happen on the first cache-producing build. It was noisy, but not the fatal error. The fatal error was the missing `.Rprofile`.
+**How we fixed it:** Removed the `.Rprofile` copy from the Dockerfile and made Docker independent of project startup files. The image now restores `renv.lock` into `/opt/renv/library`, exposes that path through `R_LIBS_USER`, disables the `renv` autoloader for container runs, and uses `Rscript` directly. We also changed the GitHub token handoff from a Docker build argument to a BuildKit secret so credentials are not baked into image metadata. The workflow prefers a `RENV_GITHUB_PAT` secret for private dependency repositories and falls back to the automatic workflow token otherwise.
+
+Key log lines:
+
+```text
+#14 [ 8/10] COPY .Rprofile .Rprofile
+#14 ERROR: failed to calculate checksum ... "/.Rprofile": not found
+ERROR: failed to build: failed to solve: failed to compute cache key
+```

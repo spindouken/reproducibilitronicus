@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - '.dockerignore'
+      - '.github/workflows/docker-build.yml'
       - 'docker/Dockerfile'
       - 'renv.lock'
   workflow_dispatch:
@@ -48,7 +50,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+          # Use RENV_GITHUB_PAT when private package remotes live outside this repo.
+          secrets: |
+            github_token=${{ secrets.RENV_GITHUB_PAT || github.token }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max

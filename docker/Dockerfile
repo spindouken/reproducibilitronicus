@@ -1,4 +1,5 @@
-# Dockerfile — Rocker-based image for reproducible R environment
+# syntax=docker/dockerfile:1.7
+# Dockerfile - Rocker-based image for reproducible R environment
 #
 # This is a minimal Docker image that provides:
 # 1. A fixed R version (via Rocker)
@@ -14,7 +15,7 @@
 # Trade-off: Docker adds complexity (image builds, registry management,
 # layer caching). For a solo learning project, renv alone may be sufficient.
 # This Dockerfile exists to demonstrate the pattern and document the
-# trade-off — it's optional, not mandatory.
+# trade-off - it's optional, not mandatory.
 #
 # Reference: BIG project's Dockerfile uses the same Rocker base pattern.
 
@@ -23,7 +24,9 @@ FROM docker.io/rocker/r-ver:4.4.2
 # --- System dependencies ---
 # These are the native libraries that R packages need at the C/C++ level.
 # Without them, install.packages("arrow") would fail.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates \
+  curl \
   git \
   nodejs \
   libcurl4-openssl-dev \
@@ -46,12 +49,14 @@ RUN curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v${QUART
   && dpkg -i quarto-${QUARTO_VERSION}-linux-amd64.deb \
   && rm quarto-${QUARTO_VERSION}-linux-amd64.deb
 
-# --- Configure Global renv Library ---
-# We set the library path outside the workspace so that when GitHub Actions
-# mounts the repository over the working directory, the installed packages
-# are not overwritten or hidden.
-ENV RENV_PATHS_LIBRARY=/usr/local/lib/R/renv/library
-RUN mkdir -p /usr/local/lib/R/renv/library
+# --- Configure image-level R library ---
+# Keep installed packages outside the project workspace so GitHub Actions'
+# checkout mount cannot hide them. R_LIBS_USER makes the baked package library
+# visible to normal Rscript invocations without requiring a project .Rprofile.
+ENV RENV_PATHS_LIBRARY=/opt/renv/library \
+  R_LIBS_USER=/opt/renv/library \
+  RENV_CONFIG_AUTOLOADER_ENABLED=FALSE
+RUN mkdir -p "${RENV_PATHS_LIBRARY}"
 
 # --- Install renv ---
 RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
@@ -60,22 +65,29 @@ RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
 # We copy just the lockfile and config first for caching purposes.
 WORKDIR /project
 COPY renv.lock renv.lock
-COPY .Rprofile .Rprofile
 
 # --- Restore R packages from lockfile ---
 # This is the key step: renv::restore() installs the exact package versions
-# recorded in renv.lock into the global RENV_PATHS_LIBRARY.
+# recorded in renv.lock into the image-level library.
 #
-# We pass GITHUB_PAT as an argument to allow renv to install internal 
-# packages from private GitHub repositories.
-ARG GITHUB_PAT
-ENV GITHUB_PAT=$GITHUB_PAT
-RUN R -e "renv::restore(prompt = FALSE)"
+# If private GitHub remotes are present, pass a token as a BuildKit secret:
+#   docker build --secret id=github_token,env=GITHUB_PAT -f docker/Dockerfile .
+RUN --mount=type=secret,id=github_token \
+  set -eu; \
+  tmp_home="$(mktemp -d)"; \
+  export HOME="${tmp_home}"; \
+  if [ -s /run/secrets/github_token ]; then \
+    token="$(cat /run/secrets/github_token)"; \
+    export GITHUB_PAT="${token}"; \
+    git config --global url."https://x-access-token:${token}@github.com/".insteadOf "https://github.com/"; \
+  fi; \
+  Rscript -e "renv::restore(lockfile = 'renv.lock', library = Sys.getenv('RENV_PATHS_LIBRARY'), prompt = FALSE)"; \
+  rm -rf "${tmp_home}"
 
 # --- Copy remaining project files ---
-# In a CI environment, the workspace will be mounted over this, but having 
+# In a CI environment, the workspace will be mounted over this, but having
 # it here makes the image usable standalone as well.
 COPY . .
 
-# Default command: run the pipeline then render the site
-CMD ["R", "-e", "targets::tar_make(); quarto::quarto_render(profile = 'public')"]
+# Default command: run the pipeline then render the site.
+CMD ["Rscript", "-e", "targets::tar_make(); quarto::quarto_render(profile = 'public')"]

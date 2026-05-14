@@ -208,9 +208,9 @@ doesn't need to change much — the R infrastructure wraps around it.
   outside the project root to prevent the GitHub workspace mount from
   accidentally hiding the pre-installed R package library.
 - **Private Repo Access in Docker:** Installing internal packages (like `ojothemes`)
-  during a `docker build` requires passing a `GITHUB_PAT` as a build argument. 
-  Without it, `git` fails with exit code 128 because the build environment 
-  is isolated from the runner's git credentials.
+  during a `docker build` requires passing GitHub credentials into the build.
+  The best-practice version uses a BuildKit secret, not a Docker build argument,
+  because the build environment is isolated from the runner's git credentials.
 - The multi-layer caching strategy (Docker/GHCR, renv/Actions, targets/GCS,
   Quarto/freeze) is complex but each layer serves a distinct purpose.
 
@@ -268,3 +268,64 @@ a coherent, explained whole.
 The next step is clear: build the orchestration layer that turns this
 into a repeatable template. `ojoscaffold::new_project()` would be the
 capstone of the capstone.
+
+---
+
+## Docker CI Repair - `.Rprofile` and Build Secrets
+
+**Date:** 2026-05-14
+
+**Goal:** Fix the GitHub Actions Docker image build and make the Docker setup follow the project instead of forcing the project to satisfy Docker.
+
+### What failed
+
+The GitHub Actions Docker build reached the `COPY .Rprofile .Rprofile`
+layer and failed because the repository does not have a root `.Rprofile`:
+
+```text
+#14 [ 8/10] COPY .Rprofile .Rprofile
+#14 ERROR: failed to calculate checksum ... "/.Rprofile": not found
+ERROR: failed to build: failed to solve: failed to compute cache key
+```
+
+The same log also showed a missing GHCR build cache tag:
+
+```text
+failed to configure registry cache importer:
+ghcr.io/spindouken/reproducibilitronicus:buildcache: not found
+```
+
+That cache message was incidental. It can happen before the first successful
+cache export. The build-stopping problem was the missing `.Rprofile` source
+file.
+
+### Decisions made
+
+1. **Do not create `.Rprofile` just to satisfy Docker.** A project startup file
+   should serve the local R workflow, not patch over a Dockerfile assumption.
+   The image now calls `renv::restore()` explicitly from `Rscript`.
+
+2. **Make the container runtime library explicit.** Packages are restored into
+   `/opt/renv/library`, and `R_LIBS_USER` points R at that library. This keeps
+   packages outside the checked-out workspace, so GitHub Actions' workspace
+   mount does not hide the baked library.
+
+3. **Use BuildKit secrets for GitHub credentials.** The previous build used a
+   Docker build argument and `ENV GITHUB_PAT`, which risks preserving secrets in
+   image metadata. The workflow now passes `github_token` as a BuildKit secret,
+   preferring `RENV_GITHUB_PAT` when private dependency repositories require it
+   and falling back to the workflow token otherwise.
+
+4. **Add a Docker context guardrail.** `.dockerignore` now excludes generated
+   artifacts and local credential files such as `key.json`, so `COPY . .` does
+   not accidentally bake local secrets or large transient outputs into the image.
+
+### What was learned
+
+- `renv.lock` is sufficient for a non-interactive restore when the Dockerfile
+  calls `renv::restore()` directly. A missing `.Rprofile` should not be fatal
+  for CI image creation.
+- A Docker image that will run under GitHub Actions needs its package library
+  somewhere outside the mounted repository workspace.
+- Cache import errors can look alarming in BuildKit logs, but the real failure
+  is usually the final `ERROR: failed to build` block tied to a specific layer.

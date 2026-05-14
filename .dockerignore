@@ -1,0 +1,12 @@
+.git
+.github
+.Rproj.user
+_site
+_freeze
+_targets
+data/parquet
+*.Rproj
+*.log
+.env
+.Renviron
+key.json
