@@ -30,6 +30,7 @@ concurrency:
 
 env:
   R_CONFIG_ACTIVE: ci
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   pipeline-and-deploy:

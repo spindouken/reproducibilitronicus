@@ -61,11 +61,15 @@ RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
 WORKDIR /project
 COPY renv.lock renv.lock
 COPY .Rprofile .Rprofile
-COPY renv/ renv/
 
 # --- Restore R packages from lockfile ---
 # This is the key step: renv::restore() installs the exact package versions
 # recorded in renv.lock into the global RENV_PATHS_LIBRARY.
+#
+# We pass GITHUB_PAT as an argument to allow renv to install internal 
+# packages from private GitHub repositories.
+ARG GITHUB_PAT
+ENV GITHUB_PAT=$GITHUB_PAT
 RUN R -e "renv::restore(prompt = FALSE)"
 
 # --- Copy remaining project files ---

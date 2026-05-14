@@ -207,6 +207,10 @@ doesn't need to change much — the R infrastructure wraps around it.
   scripts). Additionally, we had to set `RENV_PATHS_LIBRARY` to a global path
   outside the project root to prevent the GitHub workspace mount from
   accidentally hiding the pre-installed R package library.
+- **Private Repo Access in Docker:** Installing internal packages (like `ojothemes`)
+  during a `docker build` requires passing a `GITHUB_PAT` as a build argument. 
+  Without it, `git` fails with exit code 128 because the build environment 
+  is isolated from the runner's git credentials.
 - The multi-layer caching strategy (Docker/GHCR, renv/Actions, targets/GCS,
   Quarto/freeze) is complex but each layer serves a distinct purpose.
 
