@@ -155,12 +155,13 @@ doesn't need to change much — the R infrastructure wraps around it.
 
 ### What was done
 
-- Created three GitHub Actions workflows:
-  - `pipeline-deploy.yml` — full pipeline + site deployment on push to main
-  - `tofu-ci.yml` — validates Tofu formatting on PRs (reuses actions repo)
+- Created four GitHub Actions workflows:
+  - `docker-build.yml` — builds and pushes the environment image to GHCR
+  - `pipeline-deploy.yml` — full pipeline + site deployment (runs inside Docker)
+  - `tofu-ci.yml` — validates Tofu formatting on PRs
   - `tofu-apply.yml` — applies infrastructure on push to main
 - Added Tofu infrastructure: GCS buckets, service account, WIF IAM binding
-- Created Dockerfile based on Rocker 4.4.2 (modeled after BIG project)
+- Optimized Dockerfile for CI: added Node.js and global RENV library paths
 - Added environment config overlays: `local.yaml` and `ci.yaml`
 - Wrote primers: Docker, caching strategy, WIF, GCS, CI/CD
 - Wrote guides: GitHub config, GCP setup, running locally
@@ -176,11 +177,22 @@ doesn't need to change much — the R infrastructure wraps around it.
    but for a learning project, storing locally and uploading as a separate step
    is easier to understand and debug.
 
-3. **Docker is documented but optional.** The CI workflow uses native
-   `setup-r` / `setup-renv` actions instead of a Docker image. Docker is
-   available for when system dependency divergence becomes a real problem.
+3. **Pivot to Mandatory Docker for CI.** We moved from "Docker-optional" to
+   "Docker-required." By refactoring `pipeline-deploy.yml` to run entirely
+   inside a GHCR-hosted container, we solved two major problems:
+   - **Environment Drift:** It guarantees that the local developer environment
+     and the GitHub runner are 100% identical. This eliminates bugs where
+     system-level libraries (like Arrow or DuckDB) might diverge between machines.
+   - **Performance:** It removes the need for slow setup steps (installing R, 
+     renv, system deps, and Quarto) from every run, as these are now pre-baked
+     into the image.
 
-4. **Reused the actions repo's reusable workflows** for Tofu CI and Apply.
+4. **Automated Environment Synchronization.** We added `docker-build.yml` to
+   ensure that any change to `renv.lock` or the `Dockerfile` triggers a new
+   image build. This keeps the reproducible environment in lock-step with
+   the codebase.
+
+5. **Reused the actions repo's reusable workflows** for Tofu CI and Apply.
    This is the exact pattern the group uses — no reinvention.
 
 ### What was learned
@@ -190,6 +202,11 @@ doesn't need to change much — the R infrastructure wraps around it.
   happens transparently in the workflow.
 - GitHub Actions' `vars` (repository variables) vs `secrets` distinction
   matters: with WIF, there ARE no secrets — everything is a variable.
+- **Container Runtime Hurdles:** Running GitHub Actions *inside* a container
+  requires Node.js to be installed in the image (for the runner's internal
+  scripts). Additionally, we had to set `RENV_PATHS_LIBRARY` to a global path
+  outside the project root to prevent the GitHub workspace mount from
+  accidentally hiding the pre-installed R package library.
 - The multi-layer caching strategy (Docker/GHCR, renv/Actions, targets/GCS,
   Quarto/freeze) is complex but each layer serves a distinct purpose.
 

@@ -25,6 +25,7 @@ FROM docker.io/rocker/r-ver:4.4.2
 # Without them, install.packages("arrow") would fail.
 RUN apt-get update && apt-get install -y \
   git \
+  nodejs \
   libcurl4-openssl-dev \
   libssl-dev \
   libxml2-dev \
@@ -45,10 +46,18 @@ RUN curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v${QUART
   && dpkg -i quarto-${QUARTO_VERSION}-linux-amd64.deb \
   && rm quarto-${QUARTO_VERSION}-linux-amd64.deb
 
+# --- Configure Global renv Library ---
+# We set the library path outside the workspace so that when GitHub Actions
+# mounts the repository over the working directory, the installed packages
+# are not overwritten or hidden.
+ENV RENV_PATHS_LIBRARY=/usr/local/lib/R/renv/library
+RUN mkdir -p /usr/local/lib/R/renv/library
+
 # --- Install renv ---
 RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
 
 # --- Project files ---
+# We copy just the lockfile and config first for caching purposes.
 WORKDIR /project
 COPY renv.lock renv.lock
 COPY .Rprofile .Rprofile
@@ -56,10 +65,12 @@ COPY renv/ renv/
 
 # --- Restore R packages from lockfile ---
 # This is the key step: renv::restore() installs the exact package versions
-# recorded in renv.lock, ensuring reproducibility.
+# recorded in renv.lock into the global RENV_PATHS_LIBRARY.
 RUN R -e "renv::restore(prompt = FALSE)"
 
 # --- Copy remaining project files ---
+# In a CI environment, the workspace will be mounted over this, but having 
+# it here makes the image usable standalone as well.
 COPY . .
 
 # Default command: run the pipeline then render the site
