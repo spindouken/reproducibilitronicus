@@ -320,6 +320,11 @@ file.
    artifacts and local credential files such as `key.json`, so `COPY . .` does
    not accidentally bake local secrets or large transient outputs into the image.
 
+5. **Point workflows at the actual default branch.** The repo is on `master`,
+   but the workflows were listening for `main`. That meant pushing the fix did
+   not automatically produce a fresh image build, and rerunning the old failed
+   job on GitHub kept rebuilding the old commit.
+
 ### What was learned
 
 - `renv.lock` is sufficient for a non-interactive restore when the Dockerfile
@@ -329,3 +334,5 @@ file.
   somewhere outside the mounted repository workspace.
 - Cache import errors can look alarming in BuildKit logs, but the real failure
   is usually the final `ERROR: failed to build` block tied to a specific layer.
+- Rerunning a failed GitHub Actions job reruns the same commit. When the fix
+  lands in a later commit, start a new workflow run from that branch instead.

@@ -3,7 +3,7 @@ name: Tofu Apply
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
     paths: ['infra/tofu/**']
 
 permissions:

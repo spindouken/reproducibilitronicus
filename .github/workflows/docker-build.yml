@@ -2,7 +2,7 @@ name: Build and Push Docker Environment
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - '.dockerignore'
       - '.github/workflows/docker-build.yml'
