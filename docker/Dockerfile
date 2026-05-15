@@ -26,10 +26,15 @@ FROM docker.io/rocker/r-ver:4.4.2
 # Without them, install.packages("arrow") would fail.
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
+  cmake \
   curl \
   git \
+  pandoc \
+  xz-utils \
   nodejs \
   libcurl4-openssl-dev \
+  libglpk-dev \
+  libnode-dev \
   libssl-dev \
   libxml2-dev \
   libfontconfig1-dev \

@@ -336,3 +336,21 @@ file.
   is usually the final `ERROR: failed to build` block tied to a specific layer.
 - Rerunning a failed GitHub Actions job reruns the same commit. When the fix
   lands in a later commit, start a new workflow run from that branch instead.
+- `renv` locks R package versions, but source package installation still needs
+  native system tools. The next CI run exposed this cleanly: `duckdb` failed
+  because `xz-utils` was missing, and `renv` also flagged `cmake`,
+  `libglpk-dev`, `libnode-dev`, and `pandoc`. Those now live in the Docker
+  system dependency layer.
+- This error was nuanced because it sat at the boundary between R and Linux.
+  `renv.lock` told Docker which R packages to install, but not every Ubuntu
+  tool those source installs need. The way to know what to fix was in the log:
+  first, `renv` printed the missing system packages; second, `duckdb` failed on
+  `xz: Cannot exec`, which points directly to `xz-utils`.
+- A fully prepared Dockerfile usually comes from an existing production project
+  with a similar `renv.lock`, from a generated dependency scan, or from iterating
+  through CI failures until the clean image has every native tool it needs. The
+  original Dockerfile was a reasonable starter, not a complete inventory.
+- Docker is helpful but not mandatory here. The easier route is a plain GitHub
+  Actions R workflow that installs system packages, restores `renv`, runs
+  `targets`, and renders Quarto. Docker becomes worth it when stable OS-level
+  reproducibility matters enough to justify the extra maintenance.

@@ -66,3 +66,11 @@ Key log lines:
 #14 ERROR: failed to calculate checksum ... "/.Rprofile": not found
 ERROR: failed to build: failed to solve: failed to compute cache key
 ```
+
+### 12. Docker Build: Missing System Dependency for `duckdb`
+**Error:** `Error: failed to install "duckdb"` during `renv::restore()`, with `tar (child): xz: Cannot exec: No such file or directory`.
+**Why it happened:** The Docker image had the R package lockfile but was missing some native Ubuntu packages needed while restoring source packages. `duckdb` specifically needed `xz-utils` so `tar` could unpack `duckdb.tar.xz`. The `renv` preflight also flagged `cmake`, `libglpk-dev`, `libnode-dev`, and `pandoc` for other packages.
+**How we fixed it:** Added the missing system dependencies to the Dockerfile's `apt-get install` layer: `cmake`, `xz-utils`, `pandoc`, `libglpk-dev`, and `libnode-dev`.
+**How to recognize it next time:** Look near the first actual package failure, not the huge download/install noise. Here the important line was `xz: Cannot exec`, which means the operating system tool `xz` was missing. `renv` also printed a helpful list at the top: `The following required system packages are not installed`. Those package names are the things to add to `apt-get install`.
+**Why it was not there originally:** The first Dockerfile had a hand-written starter list of common R system libraries. That gets you partway, but it was not generated from the exact packages in `renv.lock`. The missing tools only became obvious once CI tried to restore every locked package from source in a clean Linux image.
+**Is Docker necessary?** Not strictly. For this learning project, the easier path is to run the pipeline directly in GitHub Actions with R setup plus `renv::restore()`. Docker is useful when you want the same OS-level environment every time, but it costs more setup work because R package versions and Ubuntu system packages both have to be maintained.
