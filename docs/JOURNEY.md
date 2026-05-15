@@ -33,7 +33,93 @@ moments* encountered during the build.
    `_targets.R` and `DESCRIPTION`, which is simpler than nesting.
 
 3. **Used `config/base.yaml`** for centralized config instead of hardcoding paths.
-   This prepares for environment-specific overrides in Phase 4 (`local.yaml`, `ci.yaml`).
+   In Phase 1 this looked small: the site needed to know where reports, docs,
+   raw data, parquet outputs, and Quarto profiles lived. We could have written
+   those paths directly into report files and helper functions, but that would
+   have made every future change a search-and-replace problem.
+
+   `config/base.yaml` became the project's shared default contract. It says,
+   "these are the normal names and locations for this project." Later files can
+   override only the pieces that differ by context. For example, local work can
+   use filesystem paths and draft rendering, while CI can use GCS buckets and
+   the public Quarto profile. That is why Phase 4 could add `local.yaml` and
+   `ci.yaml` without rewriting the reports or pipeline functions.
+
+   Looking ahead to Phase 5, this is also the first tiny version of the
+   orchestration idea. A future `ojoscaffold::new_project()` or `just` command
+   would need one place to read project names, data locations, storage choices,
+   and render profiles. Centralized config turns those choices into explicit
+   project metadata instead of hidden assumptions spread across the codebase.
+
+   How it actually works in this repo:
+
+   - `R/config.R` defines `load_config()`.
+   - `load_config()` always reads `config/base.yaml`.
+   - It checks `R_CONFIG_ACTIVE`; if nothing is set, it assumes `local`.
+   - It then looks for `config/{environment}.yaml`, such as `config/local.yaml`
+     or `config/ci.yaml`.
+   - If that overlay exists, its values replace matching values from
+     `base.yaml`.
+   - Other R functions call `load_config()` and then read values from the
+     returned list, such as `config$pipeline$source_file`.
+
+   The flow is:
+
+   ```text
+   GitHub Actions or local shell
+     sets R_CONFIG_ACTIVE
+       -> load_config()
+         -> config/base.yaml
+         -> config/local.yaml or config/ci.yaml overlay
+         -> R functions use the merged config list
+   ```
+
+   Today, the config is used directly by `load_eviction_data()` to choose the
+   raw source CSV. It is also reflected in helper/status output through the
+   active environment name. Some paths are still hardcoded in `_targets.R`, the
+   report `.qmd` files, and helper functions. That means `base.yaml` is partly
+   implemented and partly aspirational: it establishes the pattern, but the
+   codebase has not yet fully moved every path and profile lookup behind
+   `load_config()`.
+
+   The intended mature version is clearer:
+
+   - `_targets.R` would use `config$paths$data_parquet` instead of hardcoding
+     `data/parquet`.
+   - Reports would read `config$paths$data_raw` and
+     `config$paths$data_parquet` instead of writing those paths directly.
+   - `deploy_local()` would default to `config$quarto$default_profile`.
+   - CI would set `R_CONFIG_ACTIVE=ci`, causing the same R code to use CI
+     storage/rendering choices without branching throughout the code.
+
+   This is the connection to `ojoscaffold::new_project()`: a scaffold function
+   needs inputs before it can generate a project. It needs to know things like
+   the project name, display title, raw data folder, derived data folder,
+   report folder, Quarto profiles, storage backend, and optional cloud bucket
+   names. If those values live as hardcoded strings scattered across `_targets.R`,
+   reports, workflows, and helper functions, a scaffold function has no single
+   source of truth to write or update. It would have to template every file
+   separately and hope it replaced every string correctly.
+
+   A central config file gives the scaffold function a stable contract. The
+   function can ask a few questions once, write `config/base.yaml`, then generate
+   project files that refer back to that config. `_targets.R` can ask the config
+   where parquet files go. Reports can ask the config where pipeline outputs
+   live. Workflows can set `R_CONFIG_ACTIVE=ci` and let the same R code load CI
+   settings. That is what makes scaffolding safer than copying an old project:
+   the generated files depend on named config values instead of duplicated
+   literal paths.
+
+   Put differently, hard paths make scaffolding fragile because every generated
+   file has to be customized. Config-driven paths make scaffolding repeatable
+   because the scaffold can generate mostly standard files, then change behavior
+   by changing a small, explicit config layer.
+
+   `just` refers to the `just` command runner, which is like a friendlier,
+   project-focused Makefile. A repo can include a `justfile` with commands like
+   `just run`, `just render`, `just docker-build`, or `just deploy`. Those
+   commands can read or respect the same config assumptions, giving humans one
+   memorable command while the project handles the details underneath.
 
 ### Alternatives considered
 
@@ -53,6 +139,14 @@ moments* encountered during the build.
   not a Pandoc feature. It only works in Quarto's processing pipeline.
 - The custom extension format name (`okpolicy-website-template-html`) is derived
   from the extension directory name + the base format it extends (`html`).
+- Centralized config is not just convenience. It is a boundary between stable
+  project meaning and changing execution environments. Phase 1 only needed the
+  project to render locally, but the same config shape made room for Phase 4 CI
+  and Phase 5 orchestration without changing the basic project layout.
+- The current implementation is intentionally incomplete. It proves the pattern
+  through `load_config()` and the source-data filename, but the next cleanup
+  would be to replace remaining hardcoded paths in `_targets.R`, reports, and
+  helpers with config lookups.
 
 ### What comes next
 
@@ -354,3 +448,10 @@ file.
   Actions R workflow that installs system packages, restores `renv`, runs
   `targets`, and renders Quarto. Docker becomes worth it when stable OS-level
   reproducibility matters enough to justify the extra maintenance.
+- The successful Docker build exposed the next boundary: the deploy job runs
+  inside the custom image too. The image had what R needed, but not `gsutil`,
+  because `gsutil` belongs to the Google Cloud SDK. Rather than add the whole
+  Cloud SDK to the R image, the workflow now uses
+  `google-github-actions/upload-cloud-storage` for GCS uploads after auth. This
+  keeps the Docker image responsible for the R environment and lets GitHub
+  Actions handle cloud upload plumbing.
