@@ -1,0 +1,100 @@
+[
+  {
+    "objectID": "reports/geographic-patterns/index.html",
+    "href": "reports/geographic-patterns/index.html",
+    "title": "Geographic Patterns of Eviction",
+    "section": "",
+    "text": "Evictions don’t happen uniformly across a city. This report uses geocoded court records to visualize where granted evictions concentrate in Tulsa County. Each data point represents a court case where eviction was granted and the filing address was geocoded with high confidence (accuracy ≥ 0.85).\nThe goal is not to explain why evictions cluster — that requires socioeconomic context this dataset doesn’t contain. The goal is to surface where they cluster so that further investigation can focus on the right areas."
+  },
+  {
+    "objectID": "reports/geographic-patterns/index.html#what-this-report-shows",
+    "href": "reports/geographic-patterns/index.html#what-this-report-shows",
+    "title": "Geographic Patterns of Eviction",
+    "section": "",
+    "text": "Evictions don’t happen uniformly across a city. This report uses geocoded court records to visualize where granted evictions concentrate in Tulsa County. Each data point represents a court case where eviction was granted and the filing address was geocoded with high confidence (accuracy ≥ 0.85).\nThe goal is not to explain why evictions cluster — that requires socioeconomic context this dataset doesn’t contain. The goal is to surface where they cluster so that further investigation can focus on the right areas."
+  },
+  {
+    "objectID": "reports/geographic-patterns/index.html#spatial-distribution",
+    "href": "reports/geographic-patterns/index.html#spatial-distribution",
+    "title": "Geographic Patterns of Eviction",
+    "section": "2 Spatial Distribution",
+    "text": "2 Spatial Distribution\n\n\n\n\n\n\n\n\nFigure 1: Density of granted evictions across Tulsa County"
+  },
+  {
+    "objectID": "reports/geographic-patterns/index.html#concentration-by-year",
+    "href": "reports/geographic-patterns/index.html#concentration-by-year",
+    "title": "Geographic Patterns of Eviction",
+    "section": "3 Concentration by Year",
+    "text": "3 Concentration by Year\n\n\n\n\n\n\n\n\nFigure 2: Eviction density by year — has the pattern shifted?"
+  },
+  {
+    "objectID": "reports/geographic-patterns/index.html#geocoding-quality",
+    "href": "reports/geographic-patterns/index.html#geocoding-quality",
+    "title": "Geographic Patterns of Eviction",
+    "section": "4 Geocoding Quality",
+    "text": "4 Geocoding Quality\n\n\n\n\n\n\n\n\nGeocoding Accuracy Distribution\n\n\nAll granted evictions in dataset\n\n\nAccuracy Band\nCases\nShare\n\n\n\n\nExact (1.0)\n25,767\n94.8%\n\n\nGood (0.90–0.94)\n838\n3.1%\n\n\nHigh (0.95–0.99)\n347\n1.3%\n\n\nAcceptable (0.85–0.89)\n237\n0.9%"
+  },
+  {
+    "objectID": "reports/geographic-patterns/index.html#key-observations",
+    "href": "reports/geographic-patterns/index.html#key-observations",
+    "title": "Geographic Patterns of Eviction",
+    "section": "5 Key Observations",
+    "text": "5 Key Observations\nThe density maps show whether eviction filings cluster in specific neighborhoods or distribute broadly. When clusters are stable across years, they often correspond to areas with high concentrations of rental housing, lower-income demographics, or specific property management patterns.\nThe geocoding quality table confirms that the vast majority of records have exact or near-exact location data, meaning the spatial patterns are reliable rather than artifacts of geocoding errors.\n\nData pipeline: targets::tar_make() → data/parquet/ → this report."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "R Analytics Platform Learning Project",
+    "section": "",
+    "text": "This is an educational R project that combines lessons from several internal projects into a single, integrated learning environment. It demonstrates:\n\nPipeline orchestration with targets — caching, reproducibility, dependency graphs\nModern data formats — Parquet files queried with Arrow and DuckDB\nReproducible environments — renv for R packages, Docker for system dependencies\nAutomated publishing — Quarto website deployed via GitHub Actions to GitHub Pages\nCloud storage — GCS-backed artifact persistence with Workload Identity Federation"
+  },
+  {
+    "objectID": "index.html#about-this-project",
+    "href": "index.html#about-this-project",
+    "title": "R Analytics Platform Learning Project",
+    "section": "",
+    "text": "This is an educational R project that combines lessons from several internal projects into a single, integrated learning environment. It demonstrates:\n\nPipeline orchestration with targets — caching, reproducibility, dependency graphs\nModern data formats — Parquet files queried with Arrow and DuckDB\nReproducible environments — renv for R packages, Docker for system dependencies\nAutomated publishing — Quarto website deployed via GitHub Actions to GitHub Pages\nCloud storage — GCS-backed artifact persistence with Workload Identity Federation"
+  },
+  {
+    "objectID": "index.html#reports",
+    "href": "index.html#reports",
+    "title": "R Analytics Platform Learning Project",
+    "section": "2 Reports",
+    "text": "2 Reports\n\n2.1 Eviction Trends\n\nYear-over-year analysis of eviction filings in Tulsa County (2021–2025), exploring how volume has changed over time and what the trajectory suggests.\n\n\n\n2.2 Geographic Patterns\n\nSpatial analysis of where eviction filings concentrate geographically, using geocoded court records to identify hotspot areas.\n\n\nBuilt as a learning project. See docs/JOURNEY.md for the full build log."
+  },
+  {
+    "objectID": "reports/eviction-trends/index.html",
+    "href": "reports/eviction-trends/index.html",
+    "title": "Eviction Trends in Tulsa County",
+    "section": "",
+    "text": "This report tracks the volume of granted eviction filings in Tulsa County from 2021 through 2025. “Granted” means a court issued a judgment in favor of eviction — not every filing results in one. The data comes from Oklahoma court records, geocoded and filtered to cases with high-confidence location data (accuracy ≥ 0.85)."
+  },
+  {
+    "objectID": "reports/eviction-trends/index.html#what-this-report-shows",
+    "href": "reports/eviction-trends/index.html#what-this-report-shows",
+    "title": "Eviction Trends in Tulsa County",
+    "section": "",
+    "text": "This report tracks the volume of granted eviction filings in Tulsa County from 2021 through 2025. “Granted” means a court issued a judgment in favor of eviction — not every filing results in one. The data comes from Oklahoma court records, geocoded and filtered to cases with high-confidence location data (accuracy ≥ 0.85)."
+  },
+  {
+    "objectID": "reports/eviction-trends/index.html#annual-volume",
+    "href": "reports/eviction-trends/index.html#annual-volume",
+    "title": "Eviction Trends in Tulsa County",
+    "section": "2 Annual Volume",
+    "text": "2 Annual Volume\n\n\n\n\n\n\n\n\nFigure 1: Granted evictions per year in Tulsa County"
+  },
+  {
+    "objectID": "reports/eviction-trends/index.html#summary-table",
+    "href": "reports/eviction-trends/index.html#summary-table",
+    "title": "Eviction Trends in Tulsa County",
+    "section": "3 Summary Table",
+    "text": "3 Summary Table\n\n\n\n\n\n\n\n\nAnnual Eviction Summary\n\n\nTulsa County, granted evictions with geocoded addresses\n\n\nYear\nEvictions Granted\nChange\n% Change\n\n\n\n\n2021\n3,766\n—\n—\n\n\n2022\n5,406\n1,640\n43.5%\n\n\n2023\n6,194\n788\n14.6%\n\n\n2024\n6,558\n364\n5.9%\n\n\n2025\n5,265\n−1,293\n−19.7%\n\n\n\nSource: Oklahoma court records | Geocoded accuracy ≥ 0.85"
+  },
+  {
+    "objectID": "reports/eviction-trends/index.html#what-the-data-suggests",
+    "href": "reports/eviction-trends/index.html#what-the-data-suggests",
+    "title": "Eviction Trends in Tulsa County",
+    "section": "4 What the Data Suggests",
+    "text": "4 What the Data Suggests\nThe trend line tells a story about housing stability in Tulsa County. Changes in eviction volume can reflect shifts in housing policy, economic conditions, pandemic-era protections expiring, or changes in landlord behavior.\n\nData pipeline: targets::tar_make() → data/parquet/ → this report."
+  }
+]
