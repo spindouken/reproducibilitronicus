@@ -46,6 +46,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Fix git safe.directory
+        run: git config --global --add safe.directory ${{ github.workspace }}
+
       # --- GCP Authentication via Service Account Key ---
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
